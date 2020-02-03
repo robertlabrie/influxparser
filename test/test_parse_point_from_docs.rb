@@ -30,7 +30,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
 
     # value
     assert_equal(true,point['values'].key?('temperature'))
-    assert_equal('82',point['values']['temperature'])
+    assert_equal(82,point['values']['temperature'])
     
     # time
     assert_equal('1465839830100400200',point['time'])
@@ -50,7 +50,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
 
     # value
     assert_equal(true,point['values'].key?('temperature'))
-    assert_equal('82',point['values']['temperature'])
+    assert_equal(82,point['values']['temperature'])
     
     # time
     assert_equal('1465839830100400200',point['time'])
@@ -72,10 +72,10 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_equal(2,point['values'].length)
 
     assert_equal(true,point['values'].key?('temperature'))
-    assert_equal('82',point['values']['temperature'])
+    assert_equal(82,point['values']['temperature'])
 
     assert_equal(true,point['values'].key?('humidity'))
-    assert_equal('71',point['values']['humidity'])
+    assert_equal(71,point['values']['humidity'])
 
     # time
     assert_equal('1465839830100400200',point['time'])
@@ -90,12 +90,12 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
   def test_float
     point = InfluxParser.parse_point('weather,location=us-midwest temperature=82 1465839830100400200')
     assert_not_equal(false,point)   # a straight up parse error will false
-    assert_equal('82',point['values']['temperature'])
+    assert_equal(82.0,point['values']['temperature'])
   end
   def test_integer
     point = InfluxParser.parse_point('weather,location=us-midwest temperature=82i 1465839830100400200')
     assert_not_equal(false,point)   # a straight up parse error will false
-    assert_equal('82',point['values']['temperature'])
+    assert_equal(82,point['values']['temperature'])
   end
 
   def test_string
@@ -118,36 +118,45 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
   end
 
   def test_boolean
-    # TODO: validate the parsed booleans are bools and expected
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=t 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(true,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=T 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(true,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=true 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(true,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=True 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(true,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=TRUE 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(true,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=f 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(false,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=F 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(false,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=false 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(false,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=False 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(false,point['values']['temperature'])
 
     point = InfluxParser.parse_point("weather,location=us-midwest temperature=FALSE 1465839830100400200")
     assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(false,point['values']['temperature'])
 
   end
   def test_ridiculous_quotes
@@ -165,7 +174,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     # check values
 
     assert_equal(true,point['values'].key?('"temperature"'))
-    assert_equal('82',point['values']['"temperature"'])
+    assert_equal(82,point['values']['"temperature"'])
 
     # time
     assert_equal('1465839830100400200',point['time'])
@@ -186,7 +195,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     # check values
 
     assert_equal(true,point['values'].key?("'temperature'"))
-    assert_equal('82',point['values']["'temperature'"])
+    assert_equal(82,point['values']["'temperature'"])
 
     # time
     assert_equal('1465839830100400200',point['time'])
@@ -200,7 +209,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
 
     point = InfluxParser.parse_point('weather,location=us-midwest temp\=rature=82 1465839830100400200')
     assert_not_equal(false,point)   # a straight up parse error will false
-    assert_equal('82',point['values']['temp=rature'])
+    assert_equal(82,point['values']['temp=rature'])
 
     point = InfluxParser.parse_point('weather,location\ place=us-midwest temperature=82 1465839830100400200')
     assert_not_equal(false,point)   # a straight up parse error will false
@@ -214,6 +223,11 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_not_equal(false,point)   # a straight up parse error will false
     assert_equal('wea ther',point['measurement'])
 
+    point = InfluxParser.parse_point('weather temperature=toohot\"')
+    assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal('toohot"',point['values']['temperature'])
+
+    
     # so many slashes -- note they're extra terrible because I need to escape ruby slashes in the test strings
 
     # forward slash
@@ -245,6 +259,23 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     point = InfluxParser.parse_point('weather,location=us-midwest temperature_str="too hot\\\\\\\\\cold" 1465839830100400201')
     assert_not_equal(false,point)   # a straight up parse error will false
     assert_equal("too hot\\\\\\cold",point['values']['temperature_str'])
+
+  end
+  def test_types
+    point = InfluxParser.parse_point('weather float=82,integer=82i,impliedstring=helloworld,explicitstring="hello world" 1465839830100400200')
+    assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal(82.0,point['values']['float'])
+    assert_equal(82,point['values']['integer'])
+    assert_equal('helloworld',point['values']['impliedstring'])
+    assert_equal('hello world',point['values']['explicitstring'])
+
+    # do it again but this time without type parsing
+    point = InfluxParser.parse_point('weather float=82,integer=82i,impliedstring=helloworld,explicitstring="hello world" 1465839830100400200',{:parse_types => false})
+    assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal('82',point['values']['float'])
+    assert_equal('82',point['values']['integer'])
+    assert_equal('helloworld',point['values']['impliedstring'])
+    assert_equal('hello world',point['values']['explicitstring'])
 
   end
 end
