@@ -12,10 +12,7 @@ InfluxParser.parse_point('weather,location=us-midwest temperature="too warm" 146
 
 ## options
 The second parameter for parse_point is a hash array of options. The current options are
-|--------------------------|------------------------|--------------------------------------------------|
-|key                       |default                 |description                                       |
-|--------------------------|------------------------|--------------------------------------------------|
-|:parse_types              |false                   |Parse data types to ruby types (float, int, bool).|
-|                          |                        |If false all values in the fields are treated as  |
-|                          |                        |strings.                                          |
-|--------------------------|------------------------|--------------------------------------------------|
+
+### :parse_types
+default: `false`
+decription: Parse data types to ruby types (float, int, bool). If false all values in the fields are treated as strings. 
