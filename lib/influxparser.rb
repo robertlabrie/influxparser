@@ -1,13 +1,13 @@
 # TODO: the tags hash should be absent when there are no tags
-# TODO: numbers shouldn't be strings
-# TODO: numbers which aren't strings are floats
-# TODO: numbers with a trailing i are integers -- ALERT this is actually broken
 # TODO: optional timestamp parsing
 # TODO: time key shouldn't exist if there is no time
 # TODO: deal with improper line protocol
 class InfluxParser
     class << self
-        def parse_point(s)
+        def parse_point(s, options = {})
+            default_options = {:parse_types => true}
+            options = default_options.merge(options)
+
             point = {}
             point['_raw'] = s
             s = s.strip # trim whitespace
@@ -26,29 +26,30 @@ class InfluxParser
             end
             
             # now iterate over the values
-            last_value = ''
+            last_value_raw = ''
             last_key = ''
             point['values'] = {}
             vparts = s[measurement_end+1..-1].split(/(?<!\\),/)
+            # puts "vparts:#{vparts}"
             vparts.each do |v|
                 value = v.split(/(?<!\\)=/)
-                last_value = unescape_point value[1]
+                last_value_raw = value[1]
                 last_key = unescape_tag value[0]
-                # puts "kv:#{last_key}==#{last_value}"
-                point['values'][last_key] = last_value
+                # puts "last k/v #{last_key}==#{last_value_raw}"
+                point['values'][last_key] = unescape_point(value[1],options)
             end
-            
+            # puts "-----\n#{point['values'].to_yaml}\n"
             # check for a timestamp in the last value
             # TODO: I hate this, but it's late and I just want to move past it for now
             # TODO: what happens if the last character of the last value is an escaped quote?
-            has_space = last_value.rindex(/ /)
+            has_space = last_value_raw.rindex(/ /)
             if has_space
-                time_stamp = last_value[has_space+1..-1] # take everything from the space to the end
+                time_stamp = last_value_raw[has_space+1..-1] # take everything from the space to the end
                 if time_stamp.index(/"/)
                     point['time'] = nil
                 else
                     # it was a timestamp, strip it from the last value and set the timestamp
-                    point['values'][last_key] = unescape_point last_value[0..has_space-1]
+                    point['values'][last_key] = unescape_point(last_value_raw[0..has_space-1],options)
                     point['time'] = time_stamp
                 end    
             else
@@ -64,16 +65,24 @@ class InfluxParser
             t = unescape_measurement s
             t.gsub(/\\=/,'=')
         end
-        def unescape_point(s)
-            if s[-1,1] == '"'
+        def unescape_point(s,options)
+            # puts "unescape:#{s}"
+            # s = s.gsub(/\\\\/,'\\').gsub(/\\"/,'""') # handle escaped characters if present
 
-                # it's a quoted string and should be unescaped
-                s = s[1..-2] # take the wrapping quotes off
-                return s.gsub(/\\\\/,'\\').gsub(/\\"/,',')
-            else
-                # it's a number and if it's trailing an i we need to strip it because we're not handling precision here
-                return s.chomp('i')
-            end
+            # it is a string, return it
+            return s[1..-2].gsub(/\\\\/,'\\').gsub(/\\"/,'""') if s[0,1] == '"'
+
+            return s.sub(/(?<=\d)i/,'') if (!options[:parse_types]) # the customer doesn't care about types so just return it, but strip the trailing i from an integer because we care
+
+            # handle the booleans
+            return true if ['t','T','true','True','TRUE'].include?(s)
+            return false if ['f','F','false','False','FALSE'].include?(s)
+
+            # by here we have either an unquoted string or some numeric
+            
+            return s.to_f if s =~ /^(\d|\.)+$/ # floats are only digits and dots
+            return s.chomp('i').to_i if s[0..-2] =~ /^(\d)+$/ # trailing i is an integer remove it
+            return s.gsub(/\\\\/,'\\').gsub(/\\"/,'"')
         end
     end
 end
