@@ -1,18 +1,17 @@
 Gem::Specification.new do |s|
   s.name               = 'influxparser'
-  s.version            = '0.0.1'
+  s.version            = '0.0.2'
 
   s.required_rubygems_version = Gem::Requirement.new('>= 0') if s.respond_to? :required_rubygems_version=
   s.authors = ['Robert Labrie']
-  s.date = '2020-01-27'
+  s.date = '2020-02-03'
   s.description = 'Unofficial influx line protocol parser'
   s.email = 'robert.labrie@gmail.com'
   s.files = Dir['lib/*.rb']
-  # s.test_files = ["test/test_hola.rb"]
+  s.test_files = ["test/test_parse_point_from_docs.rb"]
   # s.homepage = %q{http://rubygems.org/gems/hola}
   s.require_paths = %w[lib]
   # s.bindir = 'bin'
-  # s.executables = ['ciscospark']
   s.rubygems_version = '1.6.2'
   s.summary = 'InfluxDB line protocol parser'
 
