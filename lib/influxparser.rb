@@ -1,3 +1,10 @@
+# TODO: the tags hash should be absent when there are no tags
+# TODO: numbers shouldn't be strings
+# TODO: numbers which aren't strings are floats
+# TODO: numbers with a trailing i are integers -- ALERT this is actually broken
+# TODO: optional timestamp parsing
+# TODO: time key shouldn't exist if there is no time
+# TODO: deal with improper line protocol
 class InfluxParser
     class << self
         def parse_point(s)
@@ -5,10 +12,10 @@ class InfluxParser
             point['_raw'] = s
             s = s.strip # trim whitespace
             
-            parts = s.split(/(?<!\\) /) # split on unescaped spaces for the initial sections
-            return false if parts.length < 2 # at bare minimum there needs to be a measurement and some fields
+            measurement_end = s.index /(?<!\\) /
 
-            mparts = parts[0].split(/(?<!\\),/) # split on unescaped commas for the measurement name and tags
+
+            mparts = s[0..measurement_end-1].split(/(?<!\\),/) # split on unescaped commas for the measurement name and tags
             point['measurement'] = unescape_measurement mparts[0]
             
             # if any tags were attached to the measurement iterate over them now
@@ -19,19 +26,35 @@ class InfluxParser
             end
             
             # now iterate over the values
+            last_value = ''
+            last_key = ''
             point['values'] = {}
-            vparts = parts[1].split(/(?<!\\),/)
+            vparts = s[measurement_end+1..-1].split(/(?<!\\),/)
             vparts.each do |v|
                 value = v.split(/(?<!\\)=/)
-                point['values'][unescape_tag value[0]] = unescape_point value[1]
+                last_value = unescape_point value[1]
+                last_key = unescape_tag value[0]
+                # puts "kv:#{last_key}==#{last_value}"
+                point['values'][last_key] = last_value
             end
-
-            if parts.length == 3 # handle the timestamp
-                point['time'] = parts[2]
+            
+            # check for a timestamp in the last value
+            # TODO: I hate this, but it's late and I just want to move past it for now
+            # TODO: what happens if the last character of the last value is an escaped quote?
+            has_space = last_value.rindex(/ /)
+            if has_space
+                time_stamp = last_value[has_space+1..-1] # take everything from the space to the end
+                if time_stamp.index(/"/)
+                    point['time'] = nil
+                else
+                    # it was a timestamp, strip it from the last value and set the timestamp
+                    point['values'][last_key] = unescape_point last_value[0..has_space-1]
+                    point['time'] = time_stamp
+                end    
             else
-                # no time left for you, on my way to better things
                 point['time'] = nil
             end
+            
             point
         end
         def unescape_measurement(s)
@@ -46,7 +69,7 @@ class InfluxParser
 
                 # it's a quoted string and should be unescaped
                 s = s[1..-2] # take the wrapping quotes off
-                return s.gsub(/\\\\/,',').gsub(/\\"/,',')
+                return s.gsub(/\\\\/,'\\').gsub(/\\"/,',')
             else
                 # it's a number and if it's trailing an i we need to strip it because we're not handling precision here
                 return s.chomp('i')
