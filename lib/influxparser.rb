@@ -1,11 +1,10 @@
 # TODO: the tags hash should be absent when there are no tags
-# TODO: optional timestamp parsing
 # TODO: time key shouldn't exist if there is no time
 # TODO: deal with improper line protocol
 class InfluxParser
     class << self
         def parse_point(s, options = {})
-            default_options = {:parse_types => true}
+            default_options = {:parse_types => true, :time_format => nil}
             options = default_options.merge(options)
 
             point = {}
@@ -39,9 +38,10 @@ class InfluxParser
                 point['values'][last_key] = unescape_point(value[1],options)
             end
             # puts "-----\n#{point['values'].to_yaml}\n"
+
             # check for a timestamp in the last value
             # TODO: I hate this, but it's late and I just want to move past it for now
-            # TODO: what happens if the last character of the last value is an escaped quote?
+            # TODO: this level of nesting would fill rubocop with rage
             has_space = last_value_raw.rindex(/ /)
             if has_space
                 time_stamp = last_value_raw[has_space+1..-1] # take everything from the space to the end
@@ -51,6 +51,11 @@ class InfluxParser
                     # it was a timestamp, strip it from the last value and set the timestamp
                     point['values'][last_key] = unescape_point(last_value_raw[0..has_space-1],options)
                     point['time'] = time_stamp
+                    if options[:time_format]
+                        n_time = time_stamp.to_f / 1000000000
+                        t = Time.at(n_time).utc
+                        point['time'] = t.strftime(options[:time_format])
+                    end
                 end    
             else
                 point['time'] = nil
