@@ -82,10 +82,22 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
 
   end
   def test_timestamp
+    # no timestamp
     point = InfluxParser.parse_point('weather,location=us-midwest temperature=82')
     assert_not_equal(false,point)   # a straight up parse error will false
     assert_nil(point['time'])
- end
+
+    # unformatted time
+    point = InfluxParser.parse_point('weather,location=us-midwest temperature=82 1465839830100400200')
+    assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal('1465839830100400200',point['time'])
+
+    # time
+    point = InfluxParser.parse_point('weather,location=us-midwest temperature=82 1465839830100400200',{:time_format => "%Y-%d-%mT%H:%M:%S.%NZ"})
+    assert_not_equal(false,point)   # a straight up parse error will false
+    assert_equal('2016-13-06T17:43:50.100400209Z',point['time'])
+
+  end
 
   def test_float
     point = InfluxParser.parse_point('weather,location=us-midwest temperature=82 1465839830100400200')
