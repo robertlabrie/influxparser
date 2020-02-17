@@ -15,7 +15,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_not_equal(false,point)   # a straight up parse error will false
     
     # measurement
-    assert_equal('weather',point['measurement'])
+    assert_equal('weather',point['series'])
 
     # tags
     assert_equal(2,point['tags'].length)
@@ -33,7 +33,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_equal(82,point['values']['temperature'])
     
     # time
-    assert_equal('1465839830100400200',point['time'])
+    assert_equal('1465839830100400200',point['timestamp'])
 
     end
 
@@ -42,7 +42,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_not_equal(false,point)   # a straight up parse error will false
 
     # measurement
-    assert_equal('weather',point['measurement'])
+    assert_equal('weather',point['series'])
 
     # no tags
     assert_equal(true,point.key?('tags'))
@@ -53,7 +53,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_equal(82,point['values']['temperature'])
     
     # time
-    assert_equal('1465839830100400200',point['time'])
+    assert_equal('1465839830100400200',point['timestamp'])
     
   end
 
@@ -62,7 +62,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_not_equal(false,point)   # a straight up parse error will false
 
     # measurement
-    assert_equal('weather',point['measurement'])
+    assert_equal('weather',point['series'])
 
     # check location
     assert_equal(true,point['tags'].key?('location'))
@@ -78,24 +78,24 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_equal(71,point['values']['humidity'])
 
     # time
-    assert_equal('1465839830100400200',point['time'])
+    assert_equal('1465839830100400200',point['timestamp'])
 
   end
   def test_timestamp
     # no timestamp
     point = InfluxParser.parse_point('weather,location=us-midwest temperature=82')
     assert_not_equal(false,point)   # a straight up parse error will false
-    assert_nil(point['time'])
+    assert_nil(point['timestamp'])
 
     # unformatted time
     point = InfluxParser.parse_point('weather,location=us-midwest temperature=82 1465839830100400200')
     assert_not_equal(false,point)   # a straight up parse error will false
-    assert_equal('1465839830100400200',point['time'])
+    assert_equal('1465839830100400200',point['timestamp'])
 
     # time
     point = InfluxParser.parse_point('weather,location=us-midwest temperature=82 1465839830100400200',{:time_format => "%Y-%d-%mT%H:%M:%S.%NZ"})
     assert_not_equal(false,point)   # a straight up parse error will false
-    assert_equal('2016-13-06T17:43:50.100400209Z',point['time'])
+    assert_equal('2016-13-06T17:43:50.100400209Z',point['timestamp'])
 
   end
 
@@ -177,7 +177,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
 
     assert_not_equal(false,point)   # a straight up parse error will false
     # measurement
-    assert_equal('"weather"',point['measurement'])
+    assert_equal('"weather"',point['series'])
 
     # check tag
     assert_equal(true,point['tags'].key?('"location"'))
@@ -189,7 +189,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_equal(82,point['values']['"temperature"'])
 
     # time
-    assert_equal('1465839830100400200',point['time'])
+    assert_equal('1465839830100400200',point['timestamp'])
 
 
 
@@ -198,7 +198,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
 
     assert_not_equal(false,point)   # a straight up parse error will false
     # measurement
-    assert_equal("'weather'",point['measurement'])
+    assert_equal("'weather'",point['series'])
 
     # check tag
     assert_equal(true,point['tags'].key?("'location'"))
@@ -210,7 +210,7 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
     assert_equal(82,point['values']["'temperature'"])
 
     # time
-    assert_equal('1465839830100400200',point['time'])
+    assert_equal('1465839830100400200',point['timestamp'])
 
   end
 
@@ -229,11 +229,11 @@ class TestParsePointFromDocs < Test::Unit::TestCase  # def setup
 
     point = InfluxParser.parse_point('wea\,ther,location=us-midwest temperature=82 1465839830100400200')
     assert_not_equal(false,point)   # a straight up parse error will false
-    assert_equal('wea,ther',point['measurement'])
+    assert_equal('wea,ther',point['series'])
 
     point = InfluxParser.parse_point('wea\ ther,location=us-midwest temperature=82 1465839830100400200')
     assert_not_equal(false,point)   # a straight up parse error will false
-    assert_equal('wea ther',point['measurement'])
+    assert_equal('wea ther',point['series'])
 
     point = InfluxParser.parse_point('weather temperature=toohot\"')
     assert_not_equal(false,point)   # a straight up parse error will false

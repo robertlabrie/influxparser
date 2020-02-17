@@ -15,7 +15,7 @@ class InfluxParser
 
 
             mparts = s[0..measurement_end-1].split(/(?<!\\),/) # split on unescaped commas for the measurement name and tags
-            point['measurement'] = unescape_measurement mparts[0]
+            point['series'] = unescape_measurement mparts[0]
             
             # if any tags were attached to the measurement iterate over them now
             point['tags'] = {}
@@ -46,19 +46,19 @@ class InfluxParser
             if has_space
                 time_stamp = last_value_raw[has_space+1..-1] # take everything from the space to the end
                 if time_stamp.index(/"/)
-                    point['time'] = nil
+                    point['timestamp'] = nil
                 else
                     # it was a timestamp, strip it from the last value and set the timestamp
                     point['values'][last_key] = unescape_point(last_value_raw[0..has_space-1],options)
-                    point['time'] = time_stamp
+                    point['timestamp'] = time_stamp
                     if options[:time_format]
                         n_time = time_stamp.to_f / 1000000000
                         t = Time.at(n_time).utc
-                        point['time'] = t.strftime(options[:time_format])
+                        point['timestamp'] = t.strftime(options[:time_format])
                     end
                 end    
             else
-                point['time'] = nil
+                point['timestamp'] = nil
             end
             
             point
